@@ -1,3 +1,6 @@
+from statistics import quantiles
+
+
 class Product:
 
     def __init__(self, name: str, price: float, quantity: int):
@@ -64,4 +67,67 @@ class Product:
             total_price = self.price * quantity
 
             return total_price
-        return None
+
+
+class NonStockedProduct(Product):
+    """This class creates a non-stocked product.
+    This is a product type for which the quantity will always remain 0. For example a license."""
+
+    def __init__(self, name: str, price: float):
+        super().__init__(name=name, price=price, quantity=0)
+        super().activate()
+
+    def buy(self, quantity: int) -> float:
+        """Overwrites the buy function of Product to not change the product quantity."""
+
+        total_price = self.price * quantity
+        return total_price
+
+    def show(self):
+        """Returns a string of product details: name, price"""
+
+        return f"{self.name}, Price: {self.price}"
+
+
+class LimitedProduct(Product):
+    """This class creates a limited product. These products are can only be added once per order."""
+
+    def __init__(self, name: str, price: float, quantity: int, maximum: int):
+        super().__init__(name=name, price=price, quantity=quantity)
+        self.__maximum = maximum
+
+    def get_maximum(self) -> int:
+        """Returns the maximum quantity of the product."""
+        return self.__maximum
+
+    def get_available(self, reserved) -> int:
+        """Checks if the product can be purchased based on the current reserved quantity."""
+
+        if reserved >= self.__maximum:
+            available = 0
+            print(
+                f"You have already purchased the maximum of {self.get_maximum()} amount of {self.name}"
+            )
+        else:
+            available = super().get_quantity() - reserved
+            available = min(available, self.__maximum - reserved)
+            if available == 0:
+                print(
+                    f"You have already purchased the maximum of {self.get_maximum()} amount of {self.name}"
+                )
+        return available
+
+    def buy(self, quantity: int) -> float:
+        """Overwrites the buy function of NonStockedProduct to enforce the maximum buy quantity."""
+
+        if quantity > self.__maximum:
+            raise Exception(
+                f"A maximum amount of {self.__maximum} can be bought of {super().name}. /n"
+            )
+        else:
+            return super().buy(quantity)
+
+    def show(self):
+        """Returns a string of product details: name, price, quantity, maximum purchase quantity"""
+
+        return f"{self.name}, Price: {self.price}, Quantity: {super().get_quantity()}, Maximum Purchase Quantity: {self.__maximum}"

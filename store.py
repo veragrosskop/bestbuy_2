@@ -19,6 +19,8 @@ class Store:
         """Sums all the quantities of each product."""
         total = 0
         for product in self.inventory:
+            if isinstance(product, products.NonStockedProduct):
+                continue
             total += product.get_quantity()
 
         return total

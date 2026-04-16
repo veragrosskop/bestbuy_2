@@ -16,31 +16,22 @@ def ask_int_input(min_choices: int, max_choices: int):
     elif choice.isdigit():
         choice = int(choice)
         if choice < min_choices or choice > max_choices:
-            print(
-                f"{choice} is not a valid integer in range {min_choices} to {max_choices}"
-            )
+            print(f"{choice} is not a valid integer in range {min_choices} to {max_choices}")
             return ask_int_input(min_choices, max_choices)
         else:
             return choice
     else:
-        print(
-            f"{choice} is not a valid integer in range {min_choices} to {max_choices}"
-        )
+        print(f"{choice} is not a valid integer in range {min_choices} to {max_choices}")
         return ask_int_input(min_choices, max_choices)
 
 
-def order_menu(
-    s: store.Store, shopping_list, subtotal
-) -> List[Tuple[products.Product, int]]:
+def order_menu(s: store.Store, shopping_list, subtotal) -> List[Tuple[products.Product, int]]:
     """Recursive function for order menu.
     Will recursively ask a user to choose a product and an order amount.
     Until the user presses enter to exit the menu twice.
     """
 
-    print(
-        "When you want to finish order, enter empty text.\n"
-        "Which product # do you want?"
-    )
+    print("When you want to finish order, enter empty text.\n" "Which product # do you want?")
 
     product_menu(s)
     # initialize updated inventory
@@ -51,7 +42,10 @@ def order_menu(
 
     else:  # buy a product
         prod = inventory[product_choice - 1]
-        available = prod.get_quantity()
+        if isinstance(prod, products.NonStockedProduct):
+            available = 99999
+        else:
+            available = prod.get_quantity()
         reserved_amount = 0
         # check if you already added some of the product to the list
         if shopping_list:  # if there's already something in the shopping list
@@ -60,16 +54,19 @@ def order_menu(
                     reserved_amount += item[1]
 
         print(f"How many do you want to add to your reservation of: {reserved_amount}.")
-        amount = ask_int_input(0, available - reserved_amount)  # validate quantity
+        if isinstance(prod, products.LimitedProduct):
+            available = prod.get_available(reserved_amount)
+            if available > 0:
+                amount = ask_int_input(0, available)  # validate quantity and max buy
+            else:
+                amount = 0
+        else:
+            amount = ask_int_input(0, available - reserved_amount)  # validate quantity
         shopping_list.append((prod, amount))
         subtotal += s.order([(prod, amount)])
-        print(
-            f"--> Product: {prod.name}. Amount: {amount} added to list! subtotal is {subtotal}"
-        )
+        print(f"--> Product: {prod.name}. Amount: {amount} added to list! subtotal is {subtotal}")
 
-        return order_menu(
-            s, shopping_list, subtotal
-        )  # prompt for new product acquisition
+        return order_menu(s, shopping_list, subtotal)  # prompt for new product acquisition
 
 
 def product_menu(s: store.Store):
@@ -122,6 +119,8 @@ if __name__ == "__main__":
         products.Product("MacBook Air M2", price=1450, quantity=100),
         products.Product("Bose QuietComfort Earbuds", price=250, quantity=500),
         products.Product("Google Pixel 7", price=500, quantity=250),
+        products.NonStockedProduct("Windows License", price=125),
+        products.LimitedProduct("Shipping", price=10, quantity=250, maximum=1),
     ]
     best_buy = store.Store(product_list)
 
