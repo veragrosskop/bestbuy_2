@@ -76,7 +76,7 @@ def product_menu(s: store.Store):
     inventory = s.get_all_products()
     print("-----")
     for i in range(1, len(inventory) + 1):
-        print(f"{i}. {inventory[i - 1].show()}")
+        print(f"{i}. {inventory[i - 1]}")
     print("-----")
 
 

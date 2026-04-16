@@ -1,4 +1,4 @@
-from statistics import quantiles
+import promotions
 
 
 class Product:
@@ -21,6 +21,7 @@ class Product:
             self.__quantity = quantity
 
         self.__active = self.__quantity > 0  # deactivate if <0
+        self.promotion = None
 
     def get_quantity(self) -> int:
         """Returns the quantity of the product."""
@@ -45,9 +46,13 @@ class Product:
         """This function deactivates the product."""
         self.__active = False
 
-    def show(self):
+    def set_promotion(self, promotion: promotions.Promotion) -> None:
+        """This function sets the promotion attribute."""
+        self.promotion = promotion
+
+    def __str__(self):
         """Returns a string of product details: name, price, quantity."""
-        return f"{self.name}, Price: {self.price}, Quantity: {self.__quantity}"
+        return f"{self.name}, Price: {self.price}, Quantity: {self.__quantity}, Promotion: {self.promotion}"
 
     def buy(self, quantity: int) -> float:
         """This function buys a given quantity. It checks if that quantity is available.
@@ -83,10 +88,10 @@ class NonStockedProduct(Product):
         total_price = self.price * quantity
         return total_price
 
-    def show(self):
+    def __str__(self):
         """Returns a string of product details: name, price"""
 
-        return f"{self.name}, Price: {self.price}"
+        return f"{self.name}, Price: {self.price}, Promotion: {self.promotion}"
 
 
 class LimitedProduct(Product):
@@ -127,7 +132,7 @@ class LimitedProduct(Product):
         else:
             return super().buy(quantity)
 
-    def show(self):
+    def __str__(self):
         """Returns a string of product details: name, price, quantity, maximum purchase quantity"""
 
-        return f"{self.name}, Price: {self.price}, Quantity: {super().get_quantity()}, Maximum Purchase Quantity: {self.__maximum}"
+        return f"{self.name}, Price: {self.price}, Quantity: {super().get_quantity()}, Maximum Purchase Quantity: {self.__maximum}, Promotion: {self.promotion}"
