@@ -38,11 +38,9 @@ class SecondHalfPrice(Promotion):
     def apply_promotion(self, product: products.Product, quantity: int) -> float:
         """Applies a promotion to the product and returns the discounted price."""
 
-        non_discounted_amount = quantity % 2
-        discounted_amount = quantity - non_discounted_amount
-        discounted_price = (product.price * 0.5 * (discounted_amount / 2)) + (
-            non_discounted_amount * product.price * (discounted_amount / 2)
-        )
+        half_priced = quantity // 2
+        full_priced = quantity - half_priced
+        discounted_price = (product.price * 0.5 * half_priced) + (product.price * full_priced)
 
         return discounted_price
 

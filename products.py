@@ -22,6 +22,30 @@ class Product:
 
         self.__active = self.__quantity > 0  # deactivate if <0
         self.promotion = None
+        self._reserved = 0
+
+    def get_reserved(self) -> int:
+        """Returns the reserved quantity of the product."""
+        return self._reserved
+
+    def get_available(self) -> int:
+        """Returns the available quantity of the product."""
+        return self.__quantity - self._reserved
+
+    def is_available(self) -> bool:
+        """Returns whether the product is available taking into account the reserved quantity."""
+        return (self.get_available() > 0) and self.is_active()
+
+    def reserve(self, quantity: int):
+        """Reserves the quantity of the product."""
+        if quantity > self.get_available():
+            raise Exception(f"Not enough available {self.name} to reserve")
+        self._reserved += quantity
+
+    def unreserve(self, quantity: int):
+        self._reserved -= quantity
+        if self._reserved < 0:
+            self._reserved = 0
 
     def get_quantity(self) -> int:
         """Returns the quantity of the product."""
@@ -67,9 +91,14 @@ class Product:
         elif quantity < 0:
             raise Exception(f"There aren't enough {self.name}'s in storage. /n")
         else:
+            self.unreserve(quantity)
             new_quantity = self.__quantity - quantity
             self.set_quantity(new_quantity)
-            total_price = self.price * quantity
+
+            if self.promotion:
+                total_price = self.promotion.apply_promotion(self, quantity)
+            else:
+                total_price = self.price * quantity
 
             return total_price
 
@@ -82,11 +111,34 @@ class NonStockedProduct(Product):
         super().__init__(name=name, price=price, quantity=0)
         super().activate()
 
+    def reserve(self, quantity: int):
+        """Reserves the quantity of the product."""
+        self._reserved += quantity
+
     def buy(self, quantity: int) -> float:
         """Overwrites the buy function of Product to not change the product quantity."""
 
-        total_price = self.price * quantity
+        self.unreserve(quantity)
+        if self.promotion:
+            total_price = self.promotion.apply_promotion(self, quantity)
+        else:
+            total_price = self.price * quantity
         return total_price
+
+    def is_available(self) -> bool:
+        """
+        Returns whether the product is available taking into account the reserved quantity.
+        For the NonStockedProduct this is always True, unless the product is deactivated.
+        """
+        return self.is_active()
+
+    def get_available(self) -> str:
+        """
+        Returns the available quantity of the product.
+        The amount is technically infinite.
+        """
+
+        return "infinite"
 
     def __str__(self):
         """Returns a string of product details: name, price"""
@@ -105,17 +157,17 @@ class LimitedProduct(Product):
         """Returns the maximum quantity of the product."""
         return self.__maximum
 
-    def get_available(self, reserved) -> int:
+    def get_available(self) -> int:
         """Checks if the product can be purchased based on the current reserved quantity."""
 
-        if reserved >= self.__maximum:
+        if self._reserved >= self.__maximum:
             available = 0
             print(
                 f"You have already purchased the maximum of {self.get_maximum()} amount of {self.name}"
             )
         else:
-            available = super().get_quantity() - reserved
-            available = min(available, self.__maximum - reserved)
+            available = super().get_quantity() - self._reserved
+            available = min(available, self.__maximum - self._reserved)
             if available == 0:
                 print(
                     f"You have already purchased the maximum of {self.get_maximum()} amount of {self.name}"
